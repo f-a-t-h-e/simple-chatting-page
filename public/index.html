@@ -18,6 +18,11 @@
       font-family: 'Roboto', sans-serif;
     }
 
+    input {
+      min-height: 2.5rem;
+      border-radius: 0.3rem;
+    }
+
     ul {
       list-style: none;
     }
@@ -37,7 +42,6 @@
       background-color: #000000;
       padding-right: 15px;
       padding-left: 15px;
-      margin: 20px auto;
       border-radius: 1rem;
       box-shadow: inset 0 0 3px 1px #ffffff82, 1px 1px 5px 1px #ffffff87;
       padding-top: 2rem;
@@ -97,42 +101,143 @@
       border: none;
       cursor: pointer;
     }
+
+    .container {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: space-around;
+    }
+
+    .rooms {
+      max-width: 400px;
+      min-height: 400px;
+      background-color: #000000;
+      padding-right: 15px;
+      padding-left: 15px;
+      border-radius: 1rem;
+      box-shadow: inset 0 0 3px 1px #ffffff82, 1px 1px 5px 1px #ffffff87;
+      padding-top: 2rem;
+    }
+
+    .rooms input {
+      padding: 1rem;
+    }
   </style>
   <title>Chat</title>
+
+  <style>
+    #toggle-menu {
+      height: 2rem;
+      width: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      margin-left: auto;
+      margin-right: auto;
+
+      position: fixed;
+      top: 0.5rem;
+      left: 0.25rem;
+      z-index: 10;
+    }
+
+    :root {
+      --rooms-state: block
+    }
+
+    #toggle-menu.open {
+
+      transform: rotate(90deg);
+    }
+
+    .rooms {
+      display: var(--rooms-state);
+    }
+
+    .rooms * {
+      width: 100%;
+    }
+
+    @media only screen and (max-width: 768px) {
+      .rooms {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      .chat {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+      }
+
+      .messages {
+        height: 100%;
+      }
+    }
+  </style>
+
+  <script defer>
+
+    function toggleMenu(e) {
+      e.preventDefault()
+      const r = document.querySelector(':root');
+
+      r.style.setProperty('--rooms-state', r.style.getPropertyValue('--rooms-state') === 'none' ? "block" : "none")
+
+      document.getElementById("toggle-menu").classList.toggle('open');
+    }
+
+  </script>
 </head>
 
 <body>
-  <h1>Assalamu alicom</h1>
-  <div class="chat">
-    <div class="messages">
-      <ul class="message-list">
+  <button id="toggle-menu" onclick="toggleMenu(event)"><span>|||</span></button>
+  <div class="container">
 
-        <!-- <li class="message-item item-primary">
-          Bot says: oi, tudo bom?
-        </li> -->
-      </ul>
-      <div class="message-input">
-        <input type="text" placeholder="Type your message..." />
-        <button type="button" class="btn">Send</button>
+    <div class="chat">
+      <div class="messages">
+        <ul class="message-list">
+
+          <!-- <li class="message-item item-primary">
+            Bot says: oi, tudo bom?
+          </li> -->
+        </ul>
+        <div class="message-input">
+          <input type="text" placeholder="Type your message..." />
+          <button type="button" class="btn">Send</button>
+        </div>
       </div>
     </div>
+
+    <div class="rooms">
+      <div class="create-room">
+        <input type="text" placeholder="Here the user can add new chats" />
+      </div>
+      <ul class="available-rooms">
+
+      </ul>
+    </div>
   </div>
+
+
   <script>
 
-    ws = new WebSocket("wss://simple-chatting-page-fathy.up.railway.app/");
+    const ws = new WebSocket("ws://localhost:3000/" || "wss://simple-chatting-page-fathy.up.railway.app/");
 
-    const item = {}
+    const item = {
+      chatId: 1
+    }
 
-    console.log('before open', this.ws.readyState) // 0
-
+    console.log('before open', ws.readyState) // 0
     // Listen to the connection is successful
-    this.ws.onopen = () => {
-      console.log('onopen', this.ws.readyState) // 1
-      this.roomOpen = true
-      this.ws.send(JSON.stringify({
+    ws.onopen = () => {
+
+      // console.log('onopen', ws.readyState) // 1
+      roomOpen = true
+      ws.send(JSON.stringify({
         message: "init",
-        userId: this.userName,
-        userName: this.nickname,
         roomId: item.roomId,
         roomName: item.name,
         event: 'login', // Send a login message to the server with the corresponding room information and user information
@@ -140,28 +245,29 @@
     }
 
     // Callback for received message
-    this.ws.onmessage = (message) => {
-      console.log(message);
+    ws.onmessage = (message) => {
+      // console.log(message);
       // const msg = JSON.parse(event.data);
       // writeLine(msg.message)
+      console.log(message);
       const data = JSON.parse(message.data)
-      console.log(data);
+      // console.log(data);
 
-      this.onlineNum = data.num
+      onlineNum = data.num
       if (data.event === 'login') { // There are other users entering the room message
-        // this.msgList.push({
+        // msgList.push({
         //   content: `Welcome ${data.userName} to room ${data.roomName}~`,
         // })
       } else if (data.event === 'logout') {
         // There are other users leaving the room message
-        console.log('logout', data)
-        this.msgList.push({
+        // console.log('logout', data)
+        msgList.push({
           content: `${data.userName} Leave the room`,
         })
       } else { // normal message
-        // const self = this.userId === data.userId
+        // const self = userId === data.userId
         // if (self) return
-        // this.msgList.push({
+        // msgList.push({
         //   name: data.userName,
         //   self: false,
         //   content: data.content,
@@ -170,13 +276,13 @@
       }
     }
     // Receive a disconnection notification
-    this.ws.onclose = () => { // Callback to listen for websocket close
-      console.log('onclose', this.ws.readyState)
+    ws.onclose = () => { // Callback to listen for websocket close
+      console.log('onclose', ws.readyState)
     }
 
     // Manually disconnect the websocket connection
     function close() {
-      this.ws && this.ws.close()
+      ws && ws.close()
     }
 
 
@@ -195,9 +301,13 @@
       input.value = ''
 
       const msg = {
-        message,
-        chat: "1"
+        content: {
+          text: message.trim()
+        },
+        chatId: item.chatId,
+        event: "NEW_MESSAGE"
       }
+
       ws.send(JSON.stringify(msg));
     }
 
